@@ -94,9 +94,15 @@ app.post("/books/add", (req, res) => {
     },
     rating: req.body.rating,
     authors: req.body.authors,
+    availableQuantity: req.body.availableQuantity,
     imageUrl: req.body.imageUrl,
+    description: req.body.description,
     // "swanns way chamikara mendis "
-    keywords: [...nameToKeywords(req.body.name + " " + arrayToSpacedSeparatedString(req.body.authors))]
+    keywords: [
+      ...nameToKeywords(
+        req.body.name + " " + arrayToSpacedSeparatedString(req.body.authors)
+      ),
+    ],
   };
 
   //Add prepared book object to the database
@@ -115,8 +121,88 @@ app.post("/books/add", (req, res) => {
     });
 });
 
-app.get("/books", (req, res) => {
+app.get("/books/:id", (req, res) => {
+  const booksRef = db.collection("books").doc(req.params.id);
+  booksRef.get().then((doc) => {
+    if (!doc.exists) {
+      res.status(404).send();
+    } else {
+      var book = {
+        id: doc.id,
+        ...doc.data(),
+      };
 
+      delete book["keywords"];
+      res.send(book);
+    }
+  });
+});
+
+app.delete("/books/delete/:id", (req, res) => {
+  db.collection("books")
+    .doc(req.params.id)
+    .delete()
+    .then((doc) => {
+      res.status(200).send("Succesfully deleted!");
+    });
+});
+
+// app.delete("/books/delete/:id", (req, res) => {
+//   let bookId = req.params.id;
+
+//   db.collection("books")
+//     .where("id", "==", bookId)
+//     .get()
+//     .then((querySnapshot) => {
+//       querySnapshot.docs[0].ref.delete();
+//     });
+
+//   res.status(200).send("Successfuly Deleted");
+// });
+
+app.post("/user-claim-admin", (req, res) => {
+  // Set admin privilege on the user corresponding to uid.
+
+  const uid = req.body.uid;
+
+  admin
+    .auth()
+    .setCustomUserClaims(uid, { admin: true })
+    .then(() => {
+      // The new custom claims will propagate to the user's ID token the
+      // next time a new one is issued.
+
+      res.status(201).send({
+        message: "successfully added",
+      });
+    })
+    .catch((e) => {
+      res.status(500).send(e);
+    });
+});
+
+app.post("/user-claim-employee", (req, res) => {
+  // Set admin privilege on the user corresponding to uid.
+
+  const uid = req.body.uid;
+
+  admin
+    .auth()
+    .setCustomUserClaims(uid, { employee: true })
+    .then(() => {
+      // The new custom claims will propagate to the user's ID token the
+      // next time a new one is issued.
+
+      res.status(201).send({
+        message: "successfully added",
+      });
+    })
+    .catch((e) => {
+      res.status(500).send(e);
+    });
+});
+
+app.get("/books", (req, res) => {
   const QUERY_LIMIT = 5;
   // Create a reference to the books collection
   const booksRef = db.collection("books");
@@ -132,7 +218,9 @@ app.get("/books", (req, res) => {
   // ----> '/books?searchString=Sherlock'
 
   let categoryId = req.query.categoryId;
-  let searchString = req.query.searchString ? req.query.searchString.toLowerCase() : null;
+  let searchString = req.query.searchString
+    ? req.query.searchString.toLowerCase()
+    : null;
 
   //If request has a parameter we have to add where clause if not we dont have to add where clause
 
@@ -142,7 +230,7 @@ app.get("/books", (req, res) => {
   if (categoryId && searchString) {
     queryRef = booksRef
       .where("category.id", "==", categoryId)
-      .where("keywords", 'array-contains', searchString)
+      .where("keywords", "array-contains", searchString)
       .limit(QUERY_LIMIT);
   }
 
@@ -153,7 +241,9 @@ app.get("/books", (req, res) => {
 
   // // categoryId unavailable searchString available
   else if (searchString) {
-    queryRef = booksRef.where("keywords", 'array-contains', searchString).limit(QUERY_LIMIT);
+    queryRef = booksRef
+      .where("keywords", "array-contains", searchString)
+      .limit(QUERY_LIMIT);
   }
 
   // // categoryId unavailable searchString unavailable
@@ -170,7 +260,7 @@ app.get("/books", (req, res) => {
         ...doc.data(),
       };
 
-      delete book['keywords']
+      delete book["keywords"];
       books.push(book);
     });
 
