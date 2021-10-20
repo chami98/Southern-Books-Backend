@@ -121,6 +121,40 @@ app.post("/books/add", (req, res) => {
     });
 });
 
+app.put("/books/update/:id", (req, res) => {
+  //Prepare book object
+  const book = {
+    name: req.body.name,
+    authors: req.body.authors,
+    category: {
+      name: req.body.category,
+      id: req.body.categoryId,
+    },
+    isbn: req.body.isbn,
+    availableQuantity: req.body.availableQuantity,
+    price: req.body.price,
+    dimensions: req.body.dimensions,
+    description: req.body.description,
+    rating: req.body.rating,
+    
+  };
+
+  //Add prepared book object to the database
+  db.collection("books").doc(req.params.id)
+    .update(book)
+    .then((bookSnapShot) => {
+      // saving book is successfull
+      res.status(201).send({
+        ...book,
+        id: req.params.id,
+      });
+    })
+    .catch((e) => {
+      // saving book is unsuccessful
+      res.status(500).send();
+    });
+});
+
 app.get("/books/:id", (req, res) => {
   const booksRef = db.collection("books").doc(req.params.id);
   booksRef.get().then((doc) => {
@@ -160,7 +194,7 @@ app.delete("/books/delete/:id", (req, res) => {
 //   res.status(200).send("Successfuly Deleted");
 // });
 
-app.post("/user-claim-admin", (req, res) => {
+app.post("/user-cla im-admin", (req, res) => {
   // Set admin privilege on the user corresponding to uid.
 
   const uid = req.body.uid;
