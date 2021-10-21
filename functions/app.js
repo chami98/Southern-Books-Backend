@@ -136,11 +136,11 @@ app.put("/books/update/:id", (req, res) => {
     dimensions: req.body.dimensions,
     description: req.body.description,
     rating: req.body.rating,
-    
   };
 
   //Add prepared book object to the database
-  db.collection("books").doc(req.params.id)
+  db.collection("books")
+    .doc(req.params.id)
     .update(book)
     .then((bookSnapShot) => {
       // saving book is successfull
@@ -194,7 +194,7 @@ app.delete("/books/delete/:id", (req, res) => {
 //   res.status(200).send("Successfuly Deleted");
 // });
 
-app.post("/user-cla im-admin", (req, res) => {
+app.post("/user-claim-admin", (req, res) => {
   // Set admin privilege on the user corresponding to uid.
 
   const uid = req.body.uid;
@@ -300,6 +300,30 @@ app.get("/books", (req, res) => {
 
     res.send(books);
   });
+});
+
+app.get("/users/:email", (req, res) => {
+  const userRef = db.collection("users");
+
+  let email = req.params.email;
+
+  return userRef
+    .where("email", "==", email)
+    .get()
+    .then((docs) => {
+      const userDetails = [];
+
+      docs.forEach((doc) => {
+        var user = {
+          id: doc.id,
+          ...doc.data(),
+        };
+
+        userDetails.push(user);
+      });
+
+      res.send(userDetails);
+    });
 });
 
 module.exports = app;
